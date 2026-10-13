@@ -1,0 +1,59 @@
+name: 打包 DEV Peek
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 获取源码
+        uses: actions/checkout@v4
+
+      - name: 生成并校验源码 ZIP
+        run: python3 .github/scripts/package.py
+
+      - name: 上传下载包
+        uses: actions/upload-artifact@v4
+        with:
+          name: dev-peek
+          path: tmp/dev-peek.zip
+          if-no-files-found: error
+
+  release:
+    if: github.ref_type == 'tag'
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: 下载源码 ZIP
+        uses: actions/download-artifact@v4
+        with:
+          name: dev-peek
+          path: package
+
+      - name: 发布空说明 Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          releases=$(gh release list --limit 100 --json tagName --jq '.[].tagName')
+          if printf '%s\n' "$releases" | grep -Fxq -- "$RELEASE_TAG"; then
+            gh release upload "$RELEASE_TAG" package/dev-peek.zip --clobber
+          else
+            touch empty-notes.txt
+            gh release create "$RELEASE_TAG" package/dev-peek.zip \
+              --verify-tag --title "DEV Peek $RELEASE_TAG" --notes-file empty-notes.txt
+          fi
+          local_hash=$(sha256sum package/dev-peek.zip | cut -d ' ' -f 1)
+          remote_hash=$(gh release view "$RELEASE_TAG" --json assets \
+            --jq '.assets[] | select(.name == "dev-peek.zip") | .digest')
+          test "$remote_hash" = "sha256:$local_hash"
