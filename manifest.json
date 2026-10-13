@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "DEV Peek",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "homepage_url": "https://x.com/200uperday",
   "icons": {
     "16": "assets/extension-icon.png",
