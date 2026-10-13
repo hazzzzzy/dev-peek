@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "DEV Peek",
+  "version": "1.0.0",
+  "description": "在 GMGN 和 Axiom 代币页自动查看开发者资料、跨链余额与峰值最高的十个代币。",
+  "minimum_chrome_version": "114",
+  "permissions": ["storage", "webNavigation", "clipboardWrite"],
+  "host_permissions": ["https://openapi.gmgn.ai/*"],
+  "background": { "service_worker": "background.mjs", "type": "module" },
+  "content_scripts": [{
+    "matches": ["https://gmgn.ai/*", "https://axiom.trade/*"],
+    "js": ["shared.js", "content.js"],
+    "run_at": "document_idle"
+  }],
+  "web_accessible_resources": [{
+    "resources": ["panel.css", "assets/*.svg", "assets/6lnt50An_400x400.jpg", "assets/fonts/*.ttf"],
+    "matches": ["https://gmgn.ai/*", "https://axiom.trade/*"]
+  }],
+  "action": { "default_title": "显示或收起 DEV Peek" }
+}
