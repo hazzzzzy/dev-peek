@@ -623,10 +623,10 @@
     $(".search-dev").disabled = setup || !state.address;
     const refresh = $(".refresh-dev");
     const refreshing = state.busy && state.refreshing;
-    refresh.disabled = setup || !route || state.busy;
+    refresh.disabled = setup || !route;
     refresh.classList.toggle("is-pending", refreshing);
     refresh.setAttribute("aria-busy", String(refreshing));
-    refresh.setAttribute("aria-label", refreshing ? "正在重新查询" : "重新查询");
+    refresh.setAttribute("aria-label", state.busy ? "取消当前查询并重新查询" : "重新查询");
     if (setup) { clampPosition(); return; }
     renderIdentity();
     renderBalances();
@@ -673,6 +673,7 @@
     previousDev = found;
     const requestId = ++sequence;
     const routeKey = route.key;
+    $(".body").scrollTop = 0;
     render();
     try {
       const connection = chrome.runtime.connect({ name: "dev-peek" });
@@ -833,6 +834,7 @@
     routeChangedAt = Date.now();
     candidate = null;
     state = emptyState();
+    $(".body").scrollTop = 0;
     host.style.display = next ? "block" : "none";
     if (next) {
       if (!host.isConnected) document.documentElement.append(host);
@@ -898,7 +900,7 @@
   $(".copy-dev").addEventListener("click", () => copy(state.address, $(".copy-dev")));
   $(".refresh-dev").addEventListener("click", () => {
     checkRoute();
-    if (!route || keyLoading || keySaving || !hasApiKey || state.busy) return;
+    if (!route || keyLoading || keySaving || !hasApiKey) return;
     const found = findDev();
     if (!found) {
       state.errors.push("未找到当前页面的 DEV，请展开开发者信息后重试");

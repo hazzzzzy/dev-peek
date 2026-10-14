@@ -101,7 +101,7 @@ svg, img { display: block; flex-shrink: 0; }
 .text-tooltip { position: fixed; z-index: 3; width: max-content; max-width: min(280px, calc(100vw - 16px)); overflow-y: auto; padding: 5px 7px; border: 1px solid var(--border); border-radius: 5px; color: var(--text); background: var(--surface); box-shadow: var(--shadow); font-size: 11px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .token-platform { display: flex; align-items: center; gap: 5px; padding: 5px 7px; border-radius: 3px; color: var(--text); font-size: 11px; text-decoration: none; white-space: nowrap; }
 .token-platform img { width: 16px; height: 16px; object-fit: contain; }
-.balances { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 0 6px; border-bottom: 1px solid var(--divider); }
+.balances { position: sticky; top: 0; z-index: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 0 6px; border-bottom: 1px solid var(--divider); background: var(--surface); }
 .wallet-cell { min-width: 0; padding: 5px; text-align: left; }
 .wallet-cell:has(.wallet-age[hidden]):has(.wallet-meta[hidden]) { display: flex; align-items: center; }
 .wallet-fields { display: flex; flex-direction: column; gap: 2px; width: 100%; }
