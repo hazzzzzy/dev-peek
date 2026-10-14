@@ -74,6 +74,8 @@ header { display: flex; align-items: center; height: 30px; padding: 0 7px; borde
 button { font: inherit; color: inherit; border: 0; cursor: pointer; background: none; padding: 0; }
 .actions button { display: flex; align-items: center; justify-content: center; min-width: 25px; height: 25px; border-radius: 4px; color: var(--action); }
 .actions button.collapse { color: var(--market-red); background: transparent; }
+.actions button.refresh-dev.is-pending { color: var(--accent); opacity: 1; }
+.refresh-dev.is-pending svg { animation: refresh-spin .8s linear infinite; }
 button:disabled { cursor: default; opacity: .35; }
 button:focus-visible, a:focus-visible, input:focus-visible, header:focus-visible, .wallet-cell:focus-visible, .token-link:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; border-radius: 3px; }
 button:not(:disabled):active { transform: scale(.96); }
@@ -129,6 +131,7 @@ svg, img { display: block; flex-shrink: 0; }
 .balance-value { min-width: 0; color: var(--strong); font-size: 12px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .table-wrap { padding: 0 5px 3px; }
 table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 13px; font-weight: 600; }
+.col-launchpad { width: 68px; }
 .col-age { width: 58px; }
 .col-cap { width: 58px; }
 .col-peak { width: 61px; }
@@ -138,6 +141,7 @@ td { height: 26px; padding: 0 4px; text-align: center; vertical-align: middle; b
 .token-link { display: flex; align-items: center; gap: 3px; min-width: 0; color: var(--text); font-weight: 600; text-align: left; cursor: default; }
 .token-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .age-cell { font-size: 12px; color: var(--muted); }
+.launchpad-cell { font-size: 12px; }
 .cap-cell { color: var(--action); }
 .peak-cell { color: var(--strong); font-weight: 700; }
 .market-green { color: var(--market-green); }
@@ -160,6 +164,7 @@ button.edge-tab:active { transform: none; }
 .edge-tab span { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(90deg); white-space: nowrap; font-size: 12px; font-weight: 550; letter-spacing: .5px; }
 :host([data-theme="light"]) .chain-icon[src$="/robinhood.svg"] { filter: brightness(.55); }
 @keyframes pulse { to { opacity: .45; } }
+@keyframes refresh-spin { to { transform: rotate(360deg); } }
 @media (hover: hover) and (pointer: fine) {
   .actions button:not(:disabled):hover, .source-action:hover, .edge-tab:hover { color: var(--strong); background: var(--hover); }
   .actions button.collapse:hover { color: var(--close-hover); }
@@ -170,4 +175,4 @@ button.edge-tab:active { transform: none; }
   .key-create:hover { text-decoration: underline; }
   tbody tr:hover { background: var(--row-hover); }
 }
-@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .skeleton, .refresh-dev.is-pending svg { animation: none; } }

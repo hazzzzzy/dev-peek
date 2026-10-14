@@ -88,7 +88,7 @@ async function runProfile(job, preferredChain) {
       try {
         const detail = await fetchToken(token.chain, token.address, signal);
         signal.throwIfAborted();
-        emit({ type: "token", payload: { ...token, symbol: detail.symbol || token.symbol, createdAt: detail.createdAt, marketCap: detail.marketCap } });
+        emit({ type: "token", payload: { ...token, symbol: detail.symbol || token.symbol, launchpadPlatform: detail.launchpadPlatform, createdAt: detail.createdAt, marketCap: detail.marketCap } });
       } catch (error) {
         signal.throwIfAborted();
         if (error.stop) throw error;

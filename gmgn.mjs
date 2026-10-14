@@ -181,6 +181,7 @@ export async function fetchLaunches(chain, address, signal) {
   if (!Array.isArray(data?.tokens)) throw new GmgnError("发币记录格式不正确");
   const tokens = data.tokens.filter((row) => addressKind(row.token_address)).map((row) => ({
     chain, address: normalizeAddress(row.token_address), symbol: text(row.symbol),
+    launchpadPlatform: text(row.launchpad_platform),
     createdAt: number(row.create_timestamp), marketCap: number(row.market_cap),
     peak: number(row.token_ath_mc), summaryOnly: false,
   }));
@@ -191,17 +192,17 @@ export async function fetchLaunches(chain, address, signal) {
     if (listed) listed.peak = Math.max(listed.peak ?? 0, number(ath.ath_mc));
     else tokens.push({
       chain, address: bestAddress, symbol: text(ath.token_symbol) || text(ath.token_name),
+      launchpadPlatform: null,
       createdAt: null, marketCap: null, peak: number(ath.ath_mc), summaryOnly: true,
     });
   }
   const openCount = number(data.open_count);
   let innerCount = number(data.inner_count);
-  const useListedCount = openCount === 0 && innerCount === 0;
-  // 两项汇总均为零时，按返回明细条数兜底未毕业数；明细可能被接口截断。
+  const useListedCount = openCount === 0;
+  // 已毕业为零时，未毕业按返回明细条数显示；明细可能被接口截断。
   if (useListedCount) innerCount = data.tokens.length;
   const total = Number.isSafeInteger(openCount) && Number.isSafeInteger(innerCount) ? openCount + innerCount : null;
-  const countError = total === null ? "GMGN 未提供有效的已毕业／未毕业数量"
-    : total < data.tokens.length ? "GMGN 毕业数量合计小于已返回的代币条数，统计数据不一致" : null;
+  const countError = total === null ? "GMGN 未提供有效的已毕业／未毕业数量" : null;
   return { chain, tokens, openCount, innerCount, countError, truncated: total === null || useListedCount ? data.tokens.length >= 100 : total > data.tokens.length };
 }
 
@@ -214,6 +215,7 @@ export async function fetchToken(chain, address, signal) {
   return {
     dev: addressKind(creator) ? normalizeAddress(creator) : null,
     symbol: text(data.symbol) || text(data.name),
+    launchpadPlatform: text(data.launchpad_platform),
     createdAt: number(data.creation_timestamp),
     marketCap: price !== null && supply !== null ? price * supply : null,
   };

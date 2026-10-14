@@ -19,13 +19,14 @@
   panel.id = "dev-peek-panel";
   panel.setAttribute("aria-label", "开发者资料与发币记录");
   panel.innerHTML = `
-    <header tabindex="0" data-tooltip="长按顶栏非按钮区域拖动，方向键可移动">
+    <header tabindex="0">
       <a class="author-link" href="https://x.com/200uperday" target="_blank" rel="noopener noreferrer" draggable="false">By <img class="author-avatar" src="${chrome.runtime.getURL("assets/6lnt50An_400x400.jpg")}" width="16" height="16" alt="" draggable="false"><span>Bro9</span></a>
       <div class="actions">
-        <button class="search-dev" type="button" data-tooltip="在 X 搜索 DEV" aria-label="在新标签页的 X 搜索 DEV 地址" disabled></button>
-        <button class="copy-dev" data-tooltip="复制 DEV 地址" aria-label="复制 DEV 地址" disabled></button>
-        <button class="theme-toggle" data-tooltip="切换为黑夜模式" aria-label="切换为黑夜模式"></button>
-        <button class="collapse" data-tooltip="收起" aria-label="收起" aria-expanded="true"></button>
+        <button class="search-dev" type="button" aria-label="在新标签页的 X 搜索 DEV 地址" disabled></button>
+        <button class="copy-dev" aria-label="复制 DEV 地址" disabled></button>
+        <button class="refresh-dev" type="button" aria-label="重新查询" disabled></button>
+        <button class="theme-toggle" aria-label="切换为黑夜模式"></button>
+        <button class="collapse" aria-label="收起" aria-expanded="true"></button>
       </div>
     </header>
     <form class="key-setup">
@@ -48,8 +49,8 @@
       <div class="balances"></div>
       <div class="table-wrap">
         <table aria-label="峰值最高的十个代币">
-          <colgroup><col><col class="col-age"><col class="col-cap"><col class="col-peak"></colgroup>
-          <thead><tr><th class="name-cell">代币</th><th data-tooltip="创建至今">创建</th><th data-tooltip="当前市值，美元">市值</th><th data-tooltip="历史峰值，美元；按峰值降序，当前市值为次序">峰值</th></tr></thead>
+          <colgroup><col><col class="col-launchpad"><col class="col-age"><col class="col-cap"><col class="col-peak"></colgroup>
+          <thead><tr><th class="name-cell">代币</th><th>发币平台</th><th data-tooltip="创建至今">创建</th><th data-tooltip="当前市值，美元">市值</th><th data-tooltip="历史峰值，美元；按峰值降序，当前市值为次序">峰值</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -88,6 +89,7 @@
   const icons = {
     search: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/>',
     copy: '<rect x="8" y="8" width="11" height="12" rx="2"/><path d="M15 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3"/>',
+    refresh: '<path d="M20 7v5h-5M4 17v-5h5"/><path d="M6.1 6.1a8 8 0 0 1 13.1 3.1L20 12M4 12l.8 2.8a8 8 0 0 0 13.1 3.1"/>',
     clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
     external: '<path d="M14 3h7v7M21 3 10 14M10 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5"/>',
     check: '<path d="m5 12 4 4L19 6"/>',
@@ -98,6 +100,7 @@
   const icon = (name) => `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[name]}</svg>`;
   $(".search-dev").innerHTML = icon("search");
   $(".copy-dev").innerHTML = icon("copy");
+  $(".refresh-dev").innerHTML = icon("refresh");
   $(".collapse").innerHTML = icon("close");
   $(".theme-toggle").innerHTML = icon("moon");
 
@@ -138,7 +141,7 @@
   const tagLabels = { kol: "KOL", renowned: "KOL", smart_degen: "聪明钱", smart_money: "聪明钱", fresh_wallet: "新钱包", whale: "巨鲸", creator: "创建者", dev_team: "项目方", sniper: "狙击", rat_trader: "老鼠仓", bundler: "捆绑", top_holder: "头部持仓", wash_trader: "刷量" };
 
   function emptyState() {
-    return { address: null, requested: false, busy: false, queryChains: [], launchFailed: false, wallets: new Map(), launches: new Map(), tokens: new Map(), errors: [], walletErrors: new Map(), status: "等待开发者信息" };
+    return { address: null, requested: false, busy: false, refreshing: false, queryChains: [], launchFailed: false, wallets: new Map(), launches: new Map(), tokens: new Map(), errors: [], walletErrors: new Map(), status: "等待开发者信息" };
   }
 
   async function settingsMessage(message) {
@@ -399,6 +402,7 @@
     }
     hideTextTooltip();
     if (!target?.dataset.tooltip || dragging || target.closest(".token-link") || (collapsed && target !== dock)) return;
+    if (target.classList.contains("launchpad-cell") && target.scrollWidth <= target.clientWidth) return;
     hideWalletTooltip();
     hideTokenPopover();
     textTooltipTarget = target;
@@ -537,7 +541,7 @@
       if (state.busy) {
         for (let i = 0; i < 3; i++) {
           const row = element("tr");
-          for (let col = 0; col < 4; col++) {
+          for (let col = 0; col < 5; col++) {
             const td = element("td");
             td.append(element("span", "skeleton row-skeleton"));
             row.append(td);
@@ -547,7 +551,7 @@
       } else {
         const row = element("tr");
         const cell = element("td", "empty", state.launches.size ? (state.errors.length ? "已返回的链暂无发币记录" : "暂无发币记录") : state.requested ? "未取得发币记录" : "等待开发者信息");
-        cell.colSpan = 4;
+        cell.colSpan = 5;
         row.append(cell);
         body.append(row);
       }
@@ -577,6 +581,8 @@
         tokenPopover.querySelector("a")?.focus({ preventScroll: true });
       });
       name.append(link);
+      const launchpad = element("td", "launchpad-cell", token.launchpadPlatform || "无");
+      if (token.launchpadPlatform) launchpad.dataset.tooltip = token.launchpadPlatform;
       const created = element("td", "age-cell", D.age(token.createdAt));
       if (token.createdAt) {
         created.dataset.timestamp = token.createdAt;
@@ -590,7 +596,7 @@
         else if (value > 1e5) cell.classList.add("market-green");
         cell.dataset.tooltip = value == null ? "GMGN 未提供该字段" : `$${value.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
       }
-      row.append(name, created, cap, peak);
+      row.append(name, launchpad, created, cap, peak);
       body.append(row);
     });
   }
@@ -615,6 +621,12 @@
     message.classList.toggle("failed", Boolean(keyError));
     $(".copy-dev").disabled = setup || !state.address;
     $(".search-dev").disabled = setup || !state.address;
+    const refresh = $(".refresh-dev");
+    const refreshing = state.busy && state.refreshing;
+    refresh.disabled = setup || !route || state.busy;
+    refresh.classList.toggle("is-pending", refreshing);
+    refresh.setAttribute("aria-busy", String(refreshing));
+    refresh.setAttribute("aria-label", refreshing ? "正在重新查询" : "重新查询");
     if (setup) { clampPosition(); return; }
     renderIdentity();
     renderBalances();
@@ -649,13 +661,14 @@
     }
   }
 
-  function startQuery(found, verify) {
+  function startQuery(found, verify, refreshing = false) {
     if (!route || state.requested || keyLoading || keySaving || !hasApiKey) return;
     stopConnection();
     state = emptyState();
     state.requested = true;
     state.address = verify ? null : found.address;
     state.busy = true;
+    state.refreshing = refreshing;
     state.status = "";
     previousDev = found;
     const requestId = ++sequence;
@@ -879,11 +892,23 @@
     host.dataset.theme = theme;
     const button = $(".theme-toggle");
     button.innerHTML = icon(theme === "dark" ? "sun" : "moon");
-    button.dataset.tooltip = theme === "dark" ? "切换为白天模式" : "切换为黑夜模式";
-    button.setAttribute("aria-label", button.dataset.tooltip);
+    button.setAttribute("aria-label", theme === "dark" ? "切换为白天模式" : "切换为黑夜模式");
   }
 
   $(".copy-dev").addEventListener("click", () => copy(state.address, $(".copy-dev")));
+  $(".refresh-dev").addEventListener("click", () => {
+    checkRoute();
+    if (!route || keyLoading || keySaving || !hasApiKey || state.busy) return;
+    const found = findDev();
+    if (!found) {
+      state.errors.push("未找到当前页面的 DEV，请展开开发者信息后重试");
+      render();
+      return;
+    }
+    const verify = found.address !== state.address && found.address === previousDev?.address;
+    state.requested = false;
+    startQuery(found, Boolean(verify), true);
+  });
   $(".public-key-copy").addEventListener("click", async () => {
     if (!publicKey) { void loadPublicKey(); return; }
     if (publicKeyCopying) return;
@@ -1031,6 +1056,7 @@
     hideTooltips();
     stopConnection();
     if (state.busy) { state.requested = false; state.busy = false; }
+    render();
   });
   chrome.runtime.onMessage.addListener((message) => {
     if (message.type === "route") { checkRoute(); scheduleScan(); }
